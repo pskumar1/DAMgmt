@@ -3,21 +3,28 @@ Org Hrcy Table
 
 INSTALLATION
 ------------
-### Optional - Create database OrgHrcy first using below
+### Create database OrgHrcy first using below
+(if there is an existing db, please skip this step.)
+
 CREATE DATABASE OrgHrcy;
 COMMENT ON DATABASE "OrgHrcy" IS 'The Employee Org Hierarchy Database';
 
-### Creation of schema/tables, just execute the orgHirarchy.sql file on the OrgHrcy database, Or, any other database.
-psql -f orgHierarchy.sql OrgHrcy
+### Creation of schema/tables:
+
+ Just execute the orgHirarchy.sql file on the OrgHrcy database, Or, any other database. This script creates the schema/table and loads the data.
+  
+  psql -f orgHierarchy.sql OrgHrcy
 
 
 Brief Description about the table
 ----------------------------------
-. **ORG.SUPERVISORY **: 
-    This is a supervisory org hierarchy table, basically the **oganization's reporting structure**. 
-	Contains basic fields, SUPERVISORY_ID (a SERIAL id), EMPLID, USERID, FIRST_NAME, MIDDLE_NAME, LAST_NAME, HIRE_DATE, JOB_TITLE, REPORTS_TO (references to the SERIAL id).
+. *ORG.SUPERVISORY*: 
 
-    This table contains data from the Organization Chart (refer to the **Organization Chart.pdf**)
+    This is a supervisory org hierarchy table, basically the *oganization's reporting structure*. This table Contains basic fields:
+	
+	SUPERVISORY_ID (a SERIAL id), EMPLID, USERID, FIRST_NAME, MIDDLE_NAME, LAST_NAME, HIRE_DATE, JOB_TITLE, REPORTS_TO (references to the SERIAL id).
+
+    Please refer to the Organization Chart.pdf to understand the supervisory org hierarchy data loaded into this table.
 
 Queries
 ----------
