@@ -11,7 +11,7 @@ COMMENT ON DATABASE "OrgHrcy" IS 'The Employee Org Hierarchy Database';
 
 ### Creation of schema/tables:
 
- Just execute the orgHirarchy.sql file on the OrgHrcy database, Or, any other database. This script creates the schema/table and loads the data.
+ Just execute the orgHierarchy.sql file on the OrgHrcy database, Or, any other database. This script creates the schema/table and loads the data.
   
   psql -f orgHierarchy.sql OrgHrcy
 
