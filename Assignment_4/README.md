@@ -24,7 +24,7 @@ Brief Description about the table
 	
 	SUPERVISORY_ID (a SERIAL id), EMPLID, USERID, FIRST_NAME, MIDDLE_NAME, LAST_NAME, HIRE_DATE, JOB_TITLE, REPORTS_TO (references to the SERIAL id).
 
-    Please refer to the Organization Chart.pdf to understand the supervisory org hierarchy data loaded into this table.
+    Please refer to the Organization Chart.jpeg to understand the supervisory org hierarchy data loaded into this table.
 
 Queries
 ----------
@@ -32,4 +32,3 @@ Queries
 
 1. Provide a single SELECT statement that displays the information in the table,showing who reports to whom, along with the service years..
 2. Get the entire hierarchy Of the CFO only [ supervisory_id is 2 ].
-
