@@ -1,6 +1,6 @@
 ﻿--Activity Definition:
 ---------------------
---   Fellowship church of Lowell is running a non-profit school "Little Lambs" for pre-shool and KG kids to support the low income parents in the community.
+--   Grace Lutheran  church is running a non-profit school "Little Lambs" for pre-shool and KG kids to support the low income parents in the community.
 --The school is currently needing a simple database to better manage the student and staff data and expand it later, when they start introducing higher grades.
 --Additionally, the database can also be used to notify emails/messages to parents for various school/student events - for example, notifying about an uninformed absent, 
 --snow days, scool holidays, church events etc.
