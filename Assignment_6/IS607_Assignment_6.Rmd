@@ -1,0 +1,95 @@
+---
+title: "IS 607-Week 6 Assignment"
+author: "Suman K Polavarapu"
+date: "Saturday, March 07, 2015"
+output: html_document
+---
+
+
+_1. Choose and load any R dataset (except for diamonds!) that has at least two numeric variables and at least two categorical variables. Identify which variables in your data set are numeric, and which are categorical (factors)._
+
+Use the mpg dataset from ggplot2 & review the data
+
+```{r}
+library(ggplot2)
+data(mpg)
+names(mpg)
+head(mpg)
+```
+
+
+Lets examine the structure of the mpg dataset
+```{r}
+str(mpg)
+```
+
+
+From the above, there are 6 categorical variables ==>  manufacturer, model, trans, drv, fl , class.\
+And there are 5 numerics - displ, year, cyl, cty, hwy. \
+(Note: except displ, all other 4 are integers. 'displ' is a double number)
+
+
+_2. Generate summary level descriptive statistics: Show the mean, median, 25th and 75th quartiles, min, and max for each of the applicable variables in your data set._
+
+```{r}
+summary(mpg)
+```
+
+
+_3. Determine the frequency for one of the categorical variables._
+
+```{r}
+table(mpg$manufacturer)
+```
+
+
+_4.Determine the frequency for one of the categorical variables, by a different categorical variable._
+
+```{r}
+table(mpg$manufacturer, mpg$drv)
+```
+
+
+_5. Create a graph for a single numeric variable._
+
+In base R
+```{r}
+boxplot(mpg$displ, main="Distribution of engine displacement in litres")
+
+hist(mpg$displ, xlab="Displ", main="engine displacement in litres - frequencies")
+
+#Add a density distribution line over the histogram using lines function.
+hist(mpg$displ, freq=FALSE, xlab="Displ")
+lines(density(mpg$displ))
+
+#Histogram with a normal density curve using curve
+hist(mpg$displ, freq=FALSE, xlab="Displ", col="lightgreen")
+curve(dnorm(x, mean=mean(mpg$displ), sd=sd(mpg$displ)), add=TRUE, col="darkblue", lwd=2)
+```
+
+
+Using ggplot2
+
+```{r}
+qplot(displ, data= mpg)
+```
+
+
+_6. Create a scatterplot of two numeric variables_
+
+In base R
+```{r}
+plot(mpg$hwy ~ mpg$displ)
+```
+
+
+In ggplot2
+
+```{r}
+#engine displacement in litres (displ) Vs avg highway miles pers gallon (hwy). Points colored by number of cylenders.
+qplot(displ, hwy, data = mpg, color = factor(cyl)) + geom_smooth()
+```
+
+
+
+
