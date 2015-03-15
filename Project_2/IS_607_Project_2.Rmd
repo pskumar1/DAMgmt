@@ -1,0 +1,128 @@
+---
+title: "IS 607 - Project 2"
+author: "Suman K Polavarapu"
+date: "Saturday, March 14, 2015"
+output: html_document
+---
+
+
+#Activity Definition:
+
+*Perform exploratory data analysis that compares the below data sets.Use ggplot2 with R and draw conclusions from analysis*
+
+![Datasets](IS607Proj2_Data.png)
+
+
+## Setup:
+
+_Load the required libraries_
+
+```{r}
+library(ggplot2)
+library(plyr)
+```
+
+_Load the csv file of the data sets into a dataframe_
+
+```{r}
+dataframe <- read.table("IS_607_Proj_2.csv", header = TRUE, sep = ",", stringsAsFactors=TRUE)
+str(dataframe)
+```
+
+## Analysis:
+
+### Summary stats group by each dataset
+
+```{r}
+aggregate(cbind(x,y) ~ dataset, data = dataframe, summary)
+```
+
+### Review the density of y and x values across all four sets
+
+_Review the distribution of y values across all four sets_
+```{r}
+ggplot(dataframe, aes(x=y, alpha=.5)) + geom_density(aes(fill=dataset)) + labs(title="Distribution of Y values - Overlapped view", xlab="y") 
+
+ggplot(dataframe, aes(x=y)) + geom_density(aes(fill=dataset)) + labs(title="Distribution of Y values", xlab="y") + facet_grid(dataset~.)
+
+```
+
+> __Observation:__
+> set1 and set2's y values appears to have similarity. And set3 and set4's y distribution appears similar
+
+
+
+### Review the distribution of x values across all four sets
+```{r}
+ggplot(dataframe, aes(x=x)) + geom_density(aes(fill=dataset)) + labs(title="Distribution of X values", xlab="x") + facet_grid(dataset~.)
+```
+
+> __Observation:__
+> x values distribution from set1, set2, and set3 appears similar. However, set4 is different here.
+
+
+
+### Draw the Box plot for these sets and highlight if there are any outlier points in the given sets
+
+_mutate the dataframe and add additional fields Q1, Q2, IQR, upper and lower limits for data points for all 4 sets_
+
+```{r}
+df.quartile <- ddply(dataframe, .(dataset), mutate, Q1=quantile(y, 1/4), Q3=quantile(y, 3/4), IQR=Q3-Q1, upper.limit=Q3+1.5*IQR, lower.limit=Q1-1.5*IQR)
+str(df.quartile)
+```
+
+```{r}
+ggplot() +
+  geom_boxplot(data=df.quartile, aes(x=factor(dataset), y=y, color = factor(dataset))) + 
+  geom_point(data=df.quartile[df.quartile$y > df.quartile$upper.limit | df.quartile$y < df.quartile$lower.limit,], size=8, alpha=.4 ,aes( x=factor(dataset), y=y, color=factor(dataset))) +
+  labs(title="Distribution of Y with 'outlier' points for each set", x="Data Sets", y="Y")
+```
+
+> __Observation:__
+> set2, set3 and set4 has got outliers.
+
+
+
+### Draw scatter plots for all sets and review.
+
+```{r}
+ggplot(dataframe, aes(x=x, y=y, shape=dataset, color=dataset)) + geom_point(size=2) +  facet_grid(.~dataset) + geom_line() +
+  labs(title="Dataset scatter plot - facet grid", x="Data Sets", y="Y")
+````
+
+_Draw a geom smooth - with lm_
+
+```{r}
+ggplot(dataframe,aes(x=x, y=y, color=dataset)) + facet_grid(.~dataset)  + geom_line() + geom_smooth(method=lm) +  
+  labs(title="Datasets - Regression of Y on X - 99% confidence interval - with outliers", x="Data Sets", y="Y")
+```
+
+> __Observation:__
+> All 4 sets appears to show some what similar trends. But we do have the outliers here.
+
+
+
+### Remove the outliers and review.
+
+```{r}
+df_cleandata <- subset(df.quartile, y <= upper.limit & y >= df.quartile$lower.limit)
+
+str(df_cleandata)
+
+#Draw the scatter plot facet grid with no outliers
+ggplot(df_cleandata, aes(x=x, y=y, shape=dataset, color=dataset)) + geom_point(size=2) +  facet_grid(.~dataset) + geom_line() +
+  labs(title="Dataset scatter plot with no outliers - facet grid", x="Data Sets", y="Y") + theme(legend.position="top")
+
+
+#Regressions of y on x for each set with No confidence region
+ggplot(df_cleandata,aes(x=x, y=y, color=dataset)) + geom_point(size=2) +  geom_smooth(method=lm, se=FALSE) +  facet_grid(.~dataset) + labs(title="Datasets - Regression of Y on X - without confidence interval") + theme(plot.title = element_text(colour = "purple")) 
+
+
+#Regression of y on x with 99% confidence region
+ggplot(df_cleandata,aes(x=x, y=y, color=dataset)) + geom_point(size=2) + geom_smooth(method=lm, level=0.99) + facet_grid(.~dataset) + labs(title="Datasets - Regression of Y on X - 99% confidence interval") + theme(plot.title = element_text(colour = "purple"), legend.position="bottom") 
+```
+
+> __Observation:__
+> When outliers removed, the datasets , set1 , set2 and set3 got similar trend line ( set1 and set2 got points scattered, but set3 has strictly linear trend). set4 has got constant x with increasing y values, a vertical line (undefined slope).
+
+
