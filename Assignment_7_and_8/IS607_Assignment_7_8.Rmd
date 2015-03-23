@@ -1,0 +1,134 @@
+---
+title: "IS 607 - Week 7 / 8 Assignment"
+author: "Suman K Polavarapu"
+date: "Friday, March 20, 2015"
+output: html_document
+---
+
+#Activity Definition:
+
+![Activity Definition](ActivityDefinition.png)
+
+## Setup:
+
+```{r}
+#Load the required libraries for data analysis.
+library(tidyr)
+library(dplyr)
+```
+
+## Analysis:
+
+### Write down 3 questions that you might want to answer based on this data.
+
+__Which city had more number of people participated in the poll ?__ 
+
+__What is the Age group  with highest, lowest support for Cullen from each city ?__ 
+
+__What is the proportion of the age groups participated in the polls ?__ 
+
+__What is the overall support for Cullen ?__
+
+
+### Create an R data frame with 2 observations to store this data in its current "messy" state. Use whatever method you want to re-create and/or load the data.
+
+```{r}
+response = c("Yes", "No")
+edinburgh.16_24 = c(80100, 35900)
+edinburgh.25_plus = c(143000, 214800)
+glasgow.16_24 = c(99400, 43000)
+glasgow.25_plus = c(150400, 207000)
+
+data_orig <- tbl_df(data.frame(response, edinburgh.16_24, edinburgh.25_plus, glasgow.16_24, glasgow.25_plus))
+colnames(data_orig)[1] <- "prefer_cullen"
+ 
+data_orig
+```
+
+
+### Use the functionality in the tidyr package to convert the data frame to be "tidy data."
+
+```{r}
+data_tidy <- data_orig %>%
+              gather(key = city_agegroup, value = count, -prefer_cullen) %>%
+                separate(col = city_agegroup, into=c("city", "agegroup"), sep = "\\.")
+
+data_tidy
+```
+
+
+### Use the functionality in the dplyr package to answer the questions that you asked previously.
+
+__Which city had more number of people participated in the poll ?__ 
+
+```{r}
+data_tidy %>%
+  group_by(city) %>%
+    summarise(total = sum(count)) %>%
+      arrange(desc(total)) %>%
+        top_n(1) 
+
+```
+
+
+__What is the Age group  with highest, lowest support for Cullen from each city ?__ 
+
+```{r}
+data_tidy %>%
+  filter(prefer_cullen == 'Yes') %>%
+    group_by(city, agegroup) %>%
+     summarise(total = sum(count)) %>%
+              top_n(1, total) 
+
+data_tidy %>%
+  filter(prefer_cullen == 'Yes') %>%
+    group_by(city, agegroup) %>%
+      summarise(total = sum(count)) %>%
+        top_n(1, desc(total))
+
+```
+
+
+__What is the proportion of the age groups participated in the polls ?__ 
+
+```{r}
+age_16_24  <- data_tidy %>%
+                    filter(agegroup == '16_24') %>% 
+                        summarise(total = sum(count))
+
+
+age_25_plus <- data_tidy %>%
+                    filter(agegroup == '25_plus') %>% 
+                        summarise(total = sum(count))
+
+
+
+paste(round((age_16_24)/sum(data_tidy$count) * 100,2) , '% of population is between 16 and 24')
+
+paste(round((age_25_plus)/sum(data_tidy$count) * 100,2), '% of population is between 25 and above')
+
+```
+
+
+__What is the overall support for Cullen ?__
+
+```{r}
+prefer_cullen  <- data_tidy %>%
+  filter(prefer_cullen == 'Yes') %>% 
+      summarise(total = sum(count))
+
+do_not_prefer_cullen <- data_tidy %>%
+    filter(prefer_cullen == 'No') %>% 
+      summarise(total = sum(count))
+
+paste(round((prefer_cullen)/sum(data_tidy$count) * 100,2) , '% of population prefer Cullen')
+paste(round((do_not_prefer_cullen)/sum(data_tidy$count) * 100,2) , '% of population do NOT prefer Cullen')
+
+```
+
+
+From the above analysis, it appears like Partan Bree has got slightly more support than Cullen Skink. With the given data, 
+the above tidy data set appears to be sufficient for this analysis, however it gets tricky when we need to anwer questions 
+based on the mulitple factors like age group, city. Probably by combining age groups could simplify the data frame to look 
+at just the majority preference in each city and overall.
+

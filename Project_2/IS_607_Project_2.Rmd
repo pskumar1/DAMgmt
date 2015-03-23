@@ -65,7 +65,6 @@ ggplot(dataframe, aes(x=x)) + geom_density(aes(fill=dataset)) + labs(title="Dist
 ### Draw the Box plot for these sets and highlight if there are any outlier points in the given sets
 
 _mutate the dataframe and add additional fields Q1, Q2, IQR, upper and lower limits for data points for all 4 sets_
-
 ```{r}
 df.quartile <- ddply(dataframe, .(dataset), mutate, Q1=quantile(y, 1/4), Q3=quantile(y, 3/4), IQR=Q3-Q1, upper.limit=Q3+1.5*IQR, lower.limit=Q1-1.5*IQR)
 str(df.quartile)
