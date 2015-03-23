@@ -7,7 +7,7 @@ output: html_document
 
 #Activity Definition:
 
-![Activity Definition](ActivityDefinition.png)
+![Activity Definition](ActivityDefinition.PNG)
 
 ## Setup:
 
