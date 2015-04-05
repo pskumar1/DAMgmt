@@ -87,6 +87,9 @@ colnames(popdf) <- gsub("[\r\n]", " ", colnames(popdf))
 
 head(popdf)
 
+# Which method do you prefer?  Why might one prefer one package over the other?
+
+I prefer rvest package, because it makes the scrapping easy from html pages, using XPath expressions and make use of the pipelines composed of simple, easy understood pieces.
 
 
 
