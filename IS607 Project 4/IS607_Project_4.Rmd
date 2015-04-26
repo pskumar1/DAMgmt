@@ -1,0 +1,231 @@
+---
+title: "IS 607 Project 4"
+author: "Suman K Polavarapu"
+date: "Saturday, April 25, 2015"
+output: html_document
+---
+
+####Activity: The site r-bloggers is a team blog, with a lot of great how-to content on various R topics. The page http://www.r-bloggers.com/search/web%20scraping provides a list of topics related to web scraping, which is also the topic of this project! For each of the reference blog entries on the first page, you should pull out the title, date, and author, and store these in an R data frame. And do some kind of further data extraction and/or analysis like  - Extend your scraper to include the base information for blog entries on all of the tagged pages. Your R data frame should include any necessary additional rows. Select what you feel are the (3 to 7?) most important R packages related to screen scraping. For each of the blog entries, identify which of these packages is mentioned. Your R data frame should include any necessary additional column(s) etc...
+
+__1.Setup - Load required libraries__
+
+```{r , warning=FALSE}
+library(rvest)
+library(plyr)
+library(ggplot2)
+library(lubridate)
+```
+
+__2.Initialize the URL__
+
+```{r}
+url <- "http://www.r-bloggers.com/search/web%20scraping"
+```
+
+__3.Write functions to scrap the required data from a given page __
+
+```{r}
+
+#This function extracts the author id from the URL, and the sample URL - http://www.r-bloggers.com/author/suman
+#help for grep - http://www.inside-r.org/r-doc/base/grep
+GetAuthor <- function(x) {
+  m <- regexec("^(([^:]+)://)?([^:/]+)(:([0-9]+))?(/author/)?(.*)?(/)", x)
+  parts <- do.call(rbind,
+                   lapply(regmatches(x, m), `[`, c(3L, 4L, 6L, 7L, 8L)))
+  colnames(parts) <- c("protocol","host","port","path", "author")
+  if ( parts[5] == '/author') { return (NA ) }
+  else { (return (parts[5])) }
+}
+
+#Get the title, date and author id into a data frame for a given page.
+GetPageData   <- function(page_number) {
+
+  #prepare a full url, for example for page 1, it would be "http://www.r-bloggers.com/search/web%20scraping/page/1"
+  full_url <- paste(url, "/page/", page_number, sep='')
+  
+  #scrap the titles from the given page.
+  title <- full_url %>%
+                  html() %>%
+                    html_nodes("#leftcontent h2 a") %>%
+                       html_text()
+
+  #scrap the published date
+  dates <- full_url %>%
+              html() %>%
+                html_nodes("#leftcontent .meta .date") %>%
+                      html_text()
+
+  
+  #Convert it into a date
+  date <- as.Date(strptime(dates, "%B %d, %Y"))
+  
+  
+  #authors <-  full_url %>%
+  #            html() %>%
+  #              html_nodes("#leftcontent .meta a") %>%
+  #               html_text()
+  
+  #NOTE: Since some of the author names are secure email id's. Decided to grab the href (intead of the above commented code),  and then parse the author id from the href URL.
+  
+  authors.href <- full_url %>% 
+                    html() %>% 
+                        html_nodes("#leftcontent .meta a[rel=author]") %>%  html_attr("href")
+  
+  authors <- lapply(authors.href, GetAuthor)
+  author <- unlist(lapply(authors, tail, 1)) 
+  
+  
+  #bind the columns in to a data frame.
+  blog.posts <- cbind.data.frame(title, date, author, stringsAsFactors = FALSE)
+  
+  #apply factors
+  blog.posts$date <- as.factor(blog.posts$date)
+  blog.posts$author <- as.factor(blog.posts$author)
+  
+  #putting a pause in between page reads, so this call is not treated as a denial of service attack.
+  Sys.sleep(1)
+  
+  return ( blog.posts )
+}
+
+```
+
+
+__4.Get page data for the first page __
+```{r}
+#Get the data frame for page1 - title, date, author
+page1.df <- GetPageData(1)
+head(page1.df)
+```
+
+
+__5.Get the data from all tagged pages __
+```{r}
+#For each of the 17 pages call the GetPageData and capture the data - title, date, author
+data <- ldply(1:17, GetPageData)
+data$title <- gsub("[^[:alnum:]///' ]", " ", data$title)
+str(data)
+head(data)
+```
+
+
+__6.Some of the packages used in web scrapping__
+
+_rvest -  Wrappers around the XML and httr packages to make it easy to download, then manipulate, both html and xml_
+
+_XML   -  This package provides many approaches for both reading and creating XML (and HTML) documents (including DTDs), both local and accessible via HTTP or FTP. It also offers access to an XPath "interpreter"._
+
+_RCurl -  This allows us to download files from Web servers, post forms, use HTTPS (the secure HTTP), use persistent connections, upload files, use binary content, handle redirects, password authentication, etc._
+
+_Lets figure out which of the blog entries in our pages above mentioned these packages._
+
+```{r}
+#Checks to see if the given url page content has the mention of the given package.
+IsPackageFound <- function(urlpath, package) {
+    entry <- urlpath %>%
+                html() %>%
+                  html_nodes("#leftcontent div.entry pre") %>%
+                      html_text()
+  
+  x <- grep(pattern = package, entry, value = TRUE)
+  if ( length(x) == 0 ) { found <- 0 } else {  found <- 1 }
+  found
+} 
+
+GetPackageData   <- function(page_number) {
+  
+  #prepare a full url, for example for page 1, it would be "http://www.r-bloggers.com/search/web%20scraping/page/1"
+  full_url <- paste(url, "/page/", page_number, sep='')
+  
+  #get the entry URL ( readmore links hrefs) for the given page.
+  entry.url <- full_url %>%
+                     html() %>%
+                        html_nodes("div.entry p a.more-link") %>%  html_attr("href")
+  
+  #apply the IsPackageFound for each package to the entry.urls vector
+  rvest.used <- lapply(entry.url, IsPackageFound, "rvest")
+  rvest <- unlist(lapply(rvest.used, tail, 1)) 
+  
+  xml.used <- lapply(entry.url, IsPackageFound, "XML")
+  xml <- unlist(lapply(xml.used, tail, 1)) 
+  
+  rcurl.used <- lapply(entry.url, IsPackageFound, "RCurl")
+  rcurl <- unlist(lapply(rcurl.used, tail, 1)) 
+  
+  
+  #bind the columns in to a data frame.
+  package.data.df <- cbind.data.frame(entry.url, rvest, xml, rcurl, stringsAsFactors = FALSE)
+  
+  
+  #putting a pause in between page reads, so this call is not treated as a denial of service attack.
+  Sys.sleep(1)
+  
+  return ( package.data.df )
+}
+
+#Load package data for each of the blog entry from those 17 pages.
+data.pkg <- ldply(1:17, GetPackageData)
+head(data.pkg)
+```
+
+
+__6.Combine both data frames [ column bind] __
+
+```{r}
+full.df <- cbind(data, data.pkg)
+colnames(full.df)
+head(full.df)
+```
+
+
+__7.Some Data Analysis & Visualization __
+
+```{r}
+
+#Lets figure out top 3 overall highest number of posts
+
+library(dplyr)
+(group_by(full.df, author) %>% 
+          summarize(count=n()) %>% 
+              arrange(desc(count)) %>% 
+                            top_n(n=3) )
+
+#Number of posts in each year
+qplot(year(date), data = full.df,  main = "Histogram of Number of Posts", xlab= "Year", ylab="Count") + scale_y_continuous(breaks = seq(0,50,by = 2))
+
+
+#Number of posts for each package
+# O represents revest.
+# + repesents XML.
+# X represents rcurl.
+ggplot(full.df) +  
+   geom_point(data = subset(full.df, rvest == 1) , aes(year(date), title), shape=1, size=10) +
+   geom_point(data = subset(full.df, xml == 1) , aes(year(date), title), shape=3, size=6) +
+   geom_point(data = subset(full.df, rcurl == 1) , aes(year(date), title), shape=4, size=4) +
+  ggtitle(" Package [ O = rvest, + = XML, X = rcurl ] mentioned in blog entries") 
+
+```
+
+
+__8. r-bloggers does not appear to be providing API to search the blogs. Here are some of the ideas for the APIs.__
+
+__The below are few sample RESTful resource ideas to provide JSON and/or XML responses.__
+
+_1. Provide blog entries for a date range: https://www.r-bloggers.com/api/v1/entries?fromdate={yyyy-mm-dd}&to={yyyy-mm-dd}_
+
+_2. Provide top n blog posts of the week/month/year: eg: https://www.r-bloggers.com/api/v1/entries/top?count=n&month={monthNumber}_
+
+_3. Provide blog entries of a given author, by year(/month): https://www.r-bloggers.com/api/v1/entries/author/{authorid}/year/{year}_
+
+_4. Search blog entries based on a search text: https://www.r-bloggers.com/api/v1/entries/search?text={searchtext}_
+
+_5. Search current R jobs: https://www.r-bloggers.com/api/v1/jobs/_
+
+_6. Provide popular searches: https://www.r-bloggers.com/api/v1/popularsearches/_
+
+
+
+
+
+
+
