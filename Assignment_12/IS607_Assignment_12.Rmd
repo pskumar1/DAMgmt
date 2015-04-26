@@ -1,0 +1,67 @@
+---
+title: "IS607 - Assignment 12"
+author: "Suman K Polavarapu"
+date: "Sunday, April 26, 2015"
+output: html_document
+---
+
+#### Activity : (1) Write the contents of a json file of your choosing into a mongodb database, then (2) Use R to display some of the information from this mongodb database.
+
+
+__1.Setup - Load data and the required libraries__
+Data Source:  http://mysafeinfo.com/api/data?list=presidents&format=json
+Import json into MondoDB database "rtest" : C:\\Users\\Suman>mongoimport -d rtest -c presidents < C:\\Users\\Suman\\presidents.json
+
+```{r, warning=FALSE}
+#install.packages("rmongodb")
+library(rmongodb)
+```
+
+__2.Analysis__
+
+```{r, warning=FALSE}
+#Connect to my local mongo db server or replset and return an object of class "mongo" for communication over connection.
+mgdb <- mongo.create(host="127.0.0.1")
+
+#get collections from my database , which 'rtest'
+(mongo.get.database.collections(mgdb, 'rtest'))
+
+#Get Democrat presidents only
+bson.query <- mongo.bson.from.JSON('{ "pp" : "Democrat" } ')
+
+cur <- mongo.find(mgdb, "rtest.presidents", bson.query)
+
+democrat.df <- mongo.cursor.to.data.frame(cur)
+
+head(democrat.df)
+
+```
+
+__Now lets try getting all the data from the mongo collection__
+
+```{r}
+#Get all presidents
+cur.all <- mongo.find(mgdb, "rtest.presidents")
+
+presidents.df <- mongo.cursor.to.data.frame(cur.all)
+
+#Make sure to destroy the connection to mongoDb.
+mongo.destroy(mgdb)
+
+names(presidents.df) <- c("id", "name", "party", "time")
+
+head(presidents.df)
+
+```
+
+__Quick visualization - Histogram of US Presidents by party __
+
+```{r}
+library(ggplot2)
+
+ggplot(data=presidents.df, aes(x=party, fill = party)) + geom_histogram() + ggtitle("Count of Presidents from each party") +
+stat_bin(aes(y=..count.., label=..count..), geom="text", vjust=-.5)
+
+```
+
+
