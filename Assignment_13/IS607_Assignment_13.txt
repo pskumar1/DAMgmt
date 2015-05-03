@@ -1,0 +1,77 @@
+
+#------Nodes----------------------------------------------------------------------------------------
+# Load the Students
+
+load csv with headers from "file:C:/Users/Suman/Dropbox/Sem-I/Prog/github/DAMgmt/Assignment_13/data-students-and-housing.csv" as students create (a:Student {id: students.id, firstname: students.GivenName, lastname: students.SurName, gender: students.Gender, address: students.StreetAddress, city: students.City, state: students.State, zipcode: students.ZipCode, phone: students.TelephoneNumber })
+
+--Added 6 labels, created 6 nodes, set 54 properties, statement executed in 1743 ms.
+
+#Load the Dormitories ( In order to load distinct dormitories easily, created a csv file of dormitory set.[see data-dormitories.csv] )
+
+load csv with headers from "file:C:/Users/Suman/Dropbox/Sem-I/Prog/github/DAMgmt/Assignment_13/data-dormitory.csv" as dormitories create (b:Dormitory {name: dormitories.Dormitory})
+
+--Added 3 labels, created 3 nodes, set 3 properties, statement executed in 346 ms.
+
+#Load the Courses ( In order to load distinct courses easily, created a csv file of courses set.[see data-course-master.csv ] )
+
+load csv with headers from "file:C:/Users/Suman/Dropbox/Sem-I/Prog/github/DAMgmt/Assignment_13/data-course-master.csv" as courses create (c:Course {department: courses.department, number: courses.number, title: courses.title})
+
+--Added 7 labels, created 7 nodes, set 21 properties, statement executed in 214 ms.
+
+
+#------Relationships----------------------------------------------------------------------------------------
+
+#Enrolled (section, instructor, grade)
+
+NOTE: In order to simplify , created a separate file for enrolled courses [please see - data-courses-enrolled.csv]
+
+load csv with headers from "file:C:/Users/Suman/Dropbox/Sem-I/Prog/github/DAMgmt/Assignment_13/data-courses-enrolled.csv" as courses match (a: Student {id: courses.StudentId}), (c: Course {number: courses.CourseNumber}) create (a) - [r:Enrolled {section: courses.Section, instructor: courses.Instructor, grade: courses.Grade}] -> (c)
+
+--Set 36 properties, created 12 relationships, statement executed in 563 ms.
+
+
+#Completed (section, instructor, grade)
+
+NOTE: In order to simplify , created a separate file for completed courses [please see - data-courses-completed.csv]
+
+load csv with headers from "file:C:/Users/Suman/Dropbox/Sem-I/Prog/github/DAMgmt/Assignment_13/data-courses-completed.csv" as courses match (a: Student {id: courses.StudentId}), (c: Course {number: courses.CourseNumber}) create (a) - [r:Completed {section: courses.Section, instructor: courses.Instructor, grade: courses.Grade}] -> (c)
+
+--Set 36 properties, created 12 relationships, statement executed in 348 ms.
+
+#Housed (room)
+
+load csv with headers from "file:C:/Users/Suman/Dropbox/Sem-I/Prog/github/DAMgmt/Assignment_13/data-students-and-housing.csv" as housing match (a: Student {id: housing.id}), (b: Dormitory {name: housing.Dormitory}) create (a) - [r:Housed {room: housing.Room}] -> (b)
+
+Set 6 properties, created 6 relationships, statement executed in 295 ms.
+
+#------------------------------------------------------------------------------------------------------------
+
+2.In addition, please provide a short paragraph commenting on whether a graph database is a better choice or a worse choice than a SQL database for this task. Back up your claim succinctly with explanation. You do not need to implement the SQL solution
+
+The above domain can be designed as a relational database. However, considering the fact that here are many-to-many relationships like , a student <--> Course, the JOIN operations in relational
+world could increase the operation costs & the querying would be complicated. Since earlier we do not have alternatives, we kept designing these into relational models, denormalize few areas to
+increase performance. However, with the Graph databases, relationships are first class citizens, so we do not need foreign keys. By assembling the simple abstractions of nodes and relationships
+into connected structures, graph databases enable us to build sophisticated models that map closely to our problem domain.
+
+#------------------------------------------------------------------------------------------------------------
+
+3.Write the Cypher query that will find all of the roommates of the student Richard Kowalski.
+
+match (a: Student {firstname: "Richard", lastname: "Kowalski"}) - [r1:Housed] -> (b: Dormitory) <- [r2:Housed] - (c: Student) where r1.room = r2.room  return c;
+
+#------------------------------------------------------------------------------------------------------------
+
+4.Finally, suppose you were told Richard Kowalski, who was enrolled in section 12136 of Math 120: Finite Mathematics, completed the course with a grade of B. Show the query that would find the appropriate relationship and update both the label (enrolled to completed) and the grade
+
+MATCH (a: Student {firstname: "Richard", lastname: "Kowalski"}) - [r:Enrolled] -> (b: Course {number : '120'} )  CREATE (a) - [r2:Completed] -> (b) SET r2 = r WITH r DELETE r
+#------------------------------------------------------------------------------------------------------------
+
+
+Bonus Deliverable
+We have instructor as a property of the relationship “enrolled” in our model. Describe a data model that might improve on this setup by making instructor a type of node rather than an attribute. Which way do you think might make more sense? Does the use case affect your opinion? Explain. (You may wish to sketch a picture of what this new model would look like.)
+
+Having Instructor as a node would provide us with more flexibility to add any relavant attributes to the Instructor level ( for example, Instructor teaches a certain course only the spring term, Or if I need to add additional
+attributes to the Instructor , like instructor contact details - address, ph, email etc...)
+Please see the Instructor_As_Node_Model.PNG
+
+#------------------------------------------------------------------------------------------------------------

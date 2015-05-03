@@ -1,0 +1,20 @@
+load csv with headers from "file:C:/Users/Suman/Dropbox/Sem-I/Prog/github/DAMgmt/Assignment_13/data-students-and-housing.csv" as students create (a:Student {id: students.id, firstname: students.GivenName, lastname: students.Surname, gender: students.Gender, address: students.StreetAddress, city: students.City, state: students.State, zipcode: students.ZipCode, phone: students.TelephoneNumber })
+
+load csv with headers from "file:C:/Users/Suman/Dropbox/Sem-I/Prog/github/DAMgmt/Assignment_13/data-dormitory.csv" as dormitories create (b:Dormitory {name: dormitories.Dormitory})
+
+load csv with headers from "file:C:/Users/Suman/Dropbox/Sem-I/Prog/github/DAMgmt/Assignment_13/data-course-master.csv" as courses create (c:Course {department: courses.department, number: courses.number, title: courses.title})
+
+load csv with headers from "file:C:/Users/Suman/Dropbox/Sem-I/Prog/github/DAMgmt/Assignment_13/data-courses-enrolled.csv" as courses match (a: Student {id: courses.StudentId}), (c: Course {number: courses.CourseNumber}) create (a) - [r:Enrolled {section: courses.Section, instructor: courses.Instructor, grade: courses.Grade}] -> (c)
+
+
+load csv with headers from "file:C:/Users/Suman/Dropbox/Sem-I/Prog/github/DAMgmt/Assignment_13/data-courses-completed.csv" as courses match (a: Student {id: courses.StudentId}), (c: Course {number: courses.CourseNumber}) create (a) - [r:Completed {section: courses.Section, instructor: courses.Instructor, grade: courses.Grade}] -> (c)
+
+
+load csv with headers from "file:C:/Users/Suman/Dropbox/Sem-I/Prog/github/DAMgmt/Assignment_13/data-students-and-housing.csv" as housing match (a: Student {id: housing.id}), (b: Dormitory {name: housing.Dormitory}) create (a) - [r:Housed {room: housing.Room}] -> (b)
+
+
+#Queries
+match (a: Student {firstname: "Richard", lastname: "Kowalski"}) - [r1:Housed] -> (b: Dormitory) <- [r2:Housed] - (c: Student) where r1.room = r2.room  return c;
+
+#Change Relationship
+MATCH (a: Student {firstname: "Richard", lastname: "Kowalski"}) - [r:Enrolled] -> (b: Course {number : '120'} )  CREATE (a) - [r2:Completed] -> (b) SET r2 = r WITH r DELETE r
