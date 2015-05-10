@@ -1,0 +1,72 @@
+#Load Cost Centers
+load csv with headers from "file:C:/Users/Suman/Dropbox/Sem-I/Prog/github/DAMgmt/IS607 Project 5/data-costcenters.csv" as costcenters create (a:CostCenter {costcenterid:costcenters.costcenterid, costcentername: costcenters.costcentername, businessunit: costcenters.businessunit })
+
+#Load Positions
+load csv with headers from "file:C:/Users/Suman/Dropbox/Sem-I/Prog/github/DAMgmt/IS607 Project 5/data-positions.csv" as positions create (a:Position {positionid:positions.positionid, title: positions.title })
+
+#Load Workers
+load csv with headers from "file:C:/Users/Suman/Dropbox/Sem-I/Prog/github/DAMgmt/IS607 Project 5/data-workers.csv" as workers create (a:Worker {emplid:workers.emplid, userid: workers.userid, firstname: workers.firstname, lastname: workers.lastname, gender: workers.gender, hiredate: workers.hiredate })
+
+
+
+
+#Establish relationship between Worker <--- AssignedTo ---> Position(s)
+load csv with headers from "file:C:/Users/Suman/Dropbox/Sem-I/Prog/github/DAMgmt/IS607 Project 5/data-workers-positions.csv" as workerposns match (a: Worker {emplid: workerposns.emplid}), (b: Position {positionid: workerposns.positionid}) create (a) - [r:AssignedTo {positionid: workerposns.positionid}] -> (b)
+
+
+
+#Establish relationship between Worker <--- MemberOf ---> CostCenter
+load csv with headers from "file:C:/Users/Suman/Dropbox/Sem-I/Prog/github/DAMgmt/IS607 Project 5/data-worker-costcenters.csv" as workerccs match (a: Worker {emplid: workerccs.emplid}), (b: CostCenter {costcenterid: workerccs.costcenterid}) create (a) - [r:MemberOf {costcenterid: workerccs.costcenterid}] -> (b)
+
+
+
+#Establish relationship between Worker <--- ReportsTo ---> Supervisors
+load csv with headers from "file:C:/Users/Suman/Dropbox/Sem-I/Prog/github/DAMgmt/IS607 Project 5/data-workers-supervisors.csv" as supervisors match (a: Worker {emplid: supervisors.emplid}), (b: Worker {emplid: supervisors.supervisorid}) create (a) - [r:ReportsTo {supervisorid: supervisors.supervisorid}] -> (b)
+
+#----------------------------------------------------------------------------------------------------------------------------------------
+
+#Find Worker Nodes
+match (a:Worker) return(a)
+
+#Find Position Nodes
+match (b:Position) return(b)
+
+#Find Cost Center Nodes
+match (c:CostCenter) return(c)
+
+#Find All workers that directly reports to John Mark ( President & CEO , emplid:E1001) 
+match (a:Worker)-[r:ReportsTo]->(b:Worker{emplid: 'E1001'}) RETURN a
+
+#Find the hierarchy of worker [E2200,ROBERT, WELCH] [ bottom-up ]
+match (a:Worker {emplid: 'E2200'}), (b:Worker {emplid: 'E1001'}), hierarchy = ((a)-[:ReportsTo*0..]-(b)) RETURN hierarchy
+
+#Find the executives (memeber of ExecutiveMgmt cost center)
+match (a:Worker ) - [cc:MemberOf] -> (c:CostCenter) where c.costcenterid = '100' return a
+
+#Find the cost center that has got max number of workers.
+match (a:Worker) - [r:MemberOf] -> (c:CostCenter) 
+return c.costcentername, count(r.costcenterid) as memberCount 
+order by memberCount desc 
+limit 1
+
+match (a:Worker) - [r:MemberOf] -> (c:CostCenter {costcenterid:'104'}) return *
+
+#Find all workers with more than one position assigned
+match (a:Worker) - [r:AssignedTo] -> (b:Position) 
+with a.emplid as emplid, count(r.positionid) as positionCount 
+where positionCount > 1 
+return emplid, positionCount
+
+
+#Modify hierarchy , to make the worker [Alex Miller, E2018] directly reporting to CIO [Jay Hudson,E2001]
+
+#The current relationship is:
+MATCH (a: Worker {emplid: 'E2018'}) - [r:ReportsTo] -> (b: Worker), (c : Worker {emplid: 'E2001'})  return r,c
+
+
+MATCH (a: Worker {emplid: 'E2018'}) - [r:ReportsTo] -> (b: Worker), (c : Worker {emplid: 'E2001'}) create (a) - [r2:ReportsTo{supervisorid: c.emplid}] -> (c) DELETE r
+
+#----------------------------------------------------------------------------------------------------------------------------------------
+
+
+
